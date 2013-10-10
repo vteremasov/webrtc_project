@@ -1,0 +1,58 @@
+function WebRtcClient(){
+    var subscribers = {},
+	webSocket = null,
+	myId = null,
+	init = function(){
+	    var wsUrl = "ws:" + window.location.href.substring(window.location.protocol.length).split('#')[0];
+	    webSocket = new WebSocket(wsUrl);
+	    
+	    webSocket.onopen = function(){
+		console.log('connected');
+		webSocket.send(JSON.stringify({eventName : 'ping', data : {} }));
+		publish('connected', webSocket);
+	    };
+
+	    webSocket.onclose = function(){
+		console.log('disconnected');
+	    };
+
+	    webSocket.onmessage = function(message){
+		var info = JSON.parse(message.data);
+		publish(info.eventName, info.data, webSocket);
+	    };
+	},
+	sendData = function(data){
+	    webSocket.send(JSON.stringify(data));
+	},
+	register = function(id){
+	    myId = id;
+	    sendData({eventName : "register", data : { clientId : id }});
+	},
+	call = function(id){
+	    sendData({eventName : "call", data : { fromClientId: myId, clientId : id }});
+	},
+	subscribe = function(eventName, callback){
+	    subscribers[eventName] = subscribers[eventName] || [];
+	    subscribers[eventName].push(callback);
+	},
+	publish = function(eventName, _){
+	    var events = subscribers[eventName];
+	    var args = Array.prototype.slice.call(arguments, 1);
+	    
+	    if (!events) {
+		return;
+	    }
+	    
+	    for (var i = 0, len = events.length; i < len; i++) {
+		events[i].apply(null, args);
+	    }
+	};
+    
+    return {
+	init : init,
+	register : register,
+	subscribe : subscribe,
+	publish : publish,
+	call : call
+    };
+}

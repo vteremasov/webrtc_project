@@ -1,0 +1,17 @@
+extends layout
+
+block content
+  div.user-toolbar-form
+   -if(!user.isAuthenticated)
+     a.login(href="/login") Login
+   -else
+     span.username= "Welcome: " + user.name
+     a.logout(href="/logout") Logout
+  h1= title
+  p Welcome to #{title}
+  table
+    -each contact in user.contacts
+     tr
+       td= contact
+       td
+        a(href="#" onclick="webRtcClient.call('#{contact}')") Video call
